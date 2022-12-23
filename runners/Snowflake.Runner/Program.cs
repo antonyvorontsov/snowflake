@@ -1,16 +1,14 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Snowflake;
-using Snowflake.Runner;
-
-var hash = new XxHashingFunction();
 
 var startEpoch = new DateTimeOffset(
     new DateTime(
-        2022,
+        2020,
         01,
         01,
         00,
@@ -18,52 +16,75 @@ var startEpoch = new DateTimeOffset(
         00));
 var generatorConfiguration = new IdentifierGeneratorConfiguration(startEpoch);
 
+var datacenters = new Dictionary<string, int>
+{
+    ["datacenter-1"] = 1,
+    ["datacenter-2"] = 2,
+    ["datacenter-3"] = 3,
+    ["datacenter-4"] = 4,
+    ["datacenter-5"] = 5
+};
+
+var pods = new Dictionary<string, int>
+{
+    ["service-pod-1"] = 1,
+    ["service-pod-2"] = 2,
+    ["service-pod-3"] = 3,
+    ["service-pod-4"] = 4,
+    ["service-pod-5"] = 5,
+    ["service-pod-6"] = 6,
+    ["service-pod-7"] = 7,
+    ["service-pod-8"] = 8,
+    ["service-pod-9"] = 9,
+    ["service-pod-10"] = 10
+};
+
 var generators = new[]
 {
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-1"),
-        hash.Calculate("service-pod-1")),
+        datacenters["datacenter-1"],
+        pods["service-pod-1"]),
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-1"),
-        hash.Calculate("service-pod-2")),
+        datacenters["datacenter-1"],
+        pods["service-pod-2"]),
 
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-2"),
-        hash.Calculate("service-pod-3")),
+        datacenters["datacenter-2"],
+        pods["service-pod-3"]),
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-2"),
-        hash.Calculate("service-pod-4")),
+        datacenters["datacenter-2"],
+        pods["service-pod-4"]),
 
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-3"),
-        hash.Calculate("service-pod-5")),
+        datacenters["datacenter-3"],
+        pods["service-pod-5"]),
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-3"),
-        hash.Calculate("service-pod-6")),
+        datacenters["datacenter-3"],
+        pods["service-pod-6"]),
 
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-4"),
-        hash.Calculate("service-pod-7")),
+        datacenters["datacenter-4"],
+        pods["service-pod-7"]),
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-4"),
-        hash.Calculate("service-pod-8")),
+        datacenters["datacenter-4"],
+        pods["service-pod-8"]),
 
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-5"),
-        hash.Calculate("service-pod-9")),
+        datacenters["datacenter-5"],
+        pods["service-pod-9"]),
     new IdentifierGenerator(
         generatorConfiguration,
-        hash.Calculate("datacenter-5"),
-        hash.Calculate("service-pod-10")),
+        datacenters["datacenter-5"],
+        pods["service-pod-10"])
 };
 
 var bag = new ConcurrentBag<long>();
