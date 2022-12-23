@@ -1,0 +1,1 @@
+Just an imitation of the Twitter snowflake algorithm written in C#
