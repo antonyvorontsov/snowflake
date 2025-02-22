@@ -10,6 +10,7 @@ public sealed class IdentifierGenerator
     private readonly uint _datacenterShift;
     private readonly uint _podShift;
     private readonly uint _maxSequenceNumber;
+    private readonly uint _sequenceTemplate;
 
     private uint _sequence;
     private long _lastUsage;
@@ -22,7 +23,8 @@ public sealed class IdentifierGenerator
         _configuration = configuration;
         _datacenterShift = GetFirstBits(datacenterId, bits: _configuration.DatacenterBits);
         _podShift = GetFirstBits(machineId, bits: _configuration.MachineBits);
-        _maxSequenceNumber = (uint)(Math.Pow(2, _configuration.SequenceBits) - 1);
+        _maxSequenceNumber = (uint)Math.Pow(2, _configuration.SequenceBits);
+        _sequenceTemplate = _maxSequenceNumber - 1;
     }
 
     public long Generate()
@@ -54,7 +56,7 @@ public sealed class IdentifierGenerator
             if (localLastUsage == callMilliseconds)
             {
                 // Если получили переполнение, то выходим - исчерпали лимит в sequence.
-                nextSequenceValue = (localSequence + 1) & _maxSequenceNumber;
+                nextSequenceValue = (localSequence + 1) & _sequenceTemplate;
                 if (nextSequenceValue == 0)
                 {
                     return _maxSequenceNumber;
