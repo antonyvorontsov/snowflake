@@ -1,2 +1,1 @@
-Just an imitation of the Twitter snowflake algorithm written in C#.
-Thread safety is achieved via simple locking (`Monitor`) while generating identifiers.
+Just an imitation of a thread-safe Twitter snowflake algorithm written in C#.

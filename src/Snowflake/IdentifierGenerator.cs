@@ -11,10 +11,8 @@ public sealed class IdentifierGenerator
     private readonly uint _podShift;
     private readonly uint _maxSequenceNumber;
 
-    private uint _currentSequence = 0;
-    private long _latestSequenceTimeUsage;
-
-    private readonly object _sync = new();
+    private uint _sequence;
+    private long _lastUsage;
 
     public IdentifierGenerator(
         IdentifierGeneratorConfiguration configuration,
@@ -22,7 +20,6 @@ public sealed class IdentifierGenerator
         int machineId)
     {
         _configuration = configuration;
-
         _datacenterShift = GetFirstBits(datacenterId, bits: _configuration.DatacenterBits);
         _podShift = GetFirstBits(machineId, bits: _configuration.MachineBits);
         _maxSequenceNumber = (uint)(Math.Pow(2, _configuration.SequenceBits) - 1);
@@ -30,34 +27,59 @@ public sealed class IdentifierGenerator
 
     public long Generate()
     {
-        lock (_sync)
+        var currentMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var sequence = NextSequence(currentMilliseconds);
+        while (sequence >= _maxSequenceNumber)
         {
-            var currentMilliseconds = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            if (currentMilliseconds == _latestSequenceTimeUsage)
+            currentMilliseconds = WaitTillNextMillisecond(currentMilliseconds);
+            sequence = NextSequence(currentMilliseconds);
+        }
+
+        return AssembleIdentifier(currentMilliseconds, sequence);
+    }
+
+    private uint NextSequence(long callMilliseconds)
+    {
+        while (true)
+        {
+            var localLastUsage = Interlocked.Read(ref _lastUsage);
+            var localSequence = _sequence;
+            // Кто-то успел обновить значение быстрее нас
+            if (localLastUsage > callMilliseconds)
             {
-                _currentSequence++;
-                // overflow
-                if (_currentSequence >= _maxSequenceNumber)
+                return _maxSequenceNumber;
+            }
+
+            uint nextSequenceValue = 0;
+            if (localLastUsage == callMilliseconds)
+            {
+                // Если получили переполнение, то выходим - исчерпали лимит в sequence.
+                nextSequenceValue = (localSequence + 1) & _maxSequenceNumber;
+                if (nextSequenceValue == 0)
                 {
-                    currentMilliseconds = WaitTillNextMillisecond(currentMilliseconds);
-                    _currentSequence = 0;
+                    return _maxSequenceNumber;
                 }
             }
-            else
+
+            if (Interlocked.CompareExchange(ref _lastUsage, callMilliseconds, localLastUsage) == localLastUsage
+                && Interlocked.CompareExchange(ref _sequence, nextSequenceValue, localSequence) == localSequence)
             {
-                _currentSequence = 0;
+                return nextSequenceValue;
             }
-
-            _latestSequenceTimeUsage = currentMilliseconds;
-            var result = (currentMilliseconds - _configuration.StartEpoch) << (_configuration.SequenceBits +
-                                                                               _configuration.MachineBits +
-                                                                               _configuration.DatacenterBits);
-            result |= _datacenterShift << (_configuration.SequenceBits + _configuration.MachineBits);
-            result |= _podShift << _configuration.SequenceBits;
-            result |= _currentSequence;
-
-            return result;
         }
+    }
+
+    private long AssembleIdentifier(long currentMilliseconds, uint sequenceBits)
+    {
+        var elapsedMilliseconds = currentMilliseconds - _configuration.StartEpoch;
+
+        var result = elapsedMilliseconds <<
+                     (_configuration.SequenceBits + _configuration.MachineBits + _configuration.DatacenterBits);
+        result |= _datacenterShift << (_configuration.SequenceBits + _configuration.MachineBits);
+        result |= _podShift << _configuration.SequenceBits;
+        result |= sequenceBits;
+
+        return result;
     }
 
     private long WaitTillNextMillisecond(long startMilliseconds)
