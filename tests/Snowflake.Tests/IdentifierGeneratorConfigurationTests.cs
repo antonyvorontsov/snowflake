@@ -1,5 +1,5 @@
 using System;
-using FluentAssertions;
+using Shouldly;
 using Xunit;
 
 namespace Snowflake.Tests;
@@ -11,7 +11,7 @@ public sealed class IdentifierGeneratorConfigurationTests
     {
         var function = () => new IdentifierGeneratorConfiguration(
             DateTimeOffset.UtcNow.AddDays(1));
-        function.Should().Throw<ArgumentException>();
+        function.ShouldThrow<ArgumentException>();
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public sealed class IdentifierGeneratorConfigurationTests
             10,
             10,
             DateTimeOffset.UtcNow.AddDays(-1));
-        function.Should().Throw<ArgumentException>();
+        function.ShouldThrow<ArgumentException>();
     }
 
     [Fact]
@@ -35,6 +35,6 @@ public sealed class IdentifierGeneratorConfigurationTests
             5,
             12,
             DateTimeOffset.UtcNow.AddDays(-1));
-        function.Should().NotThrow();
+        function.ShouldNotThrow();
     }
 }

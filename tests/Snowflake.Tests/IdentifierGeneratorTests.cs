@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
+using Shouldly;
 using Xunit;
 
 namespace Snowflake.Tests;
@@ -33,7 +33,7 @@ public sealed class IdentifierGeneratorTests
         }, _ => { identifierStorage.TryAdd(generator.Generate(), 1); });
 
         // Assert
-        identifierStorage.Count.Should().Be(numberOfIdentifiers);
+        identifierStorage.Count.ShouldBe(numberOfIdentifiers);
     }
 
     [Theory]
@@ -65,7 +65,7 @@ public sealed class IdentifierGeneratorTests
         // Assert
         for (var i = 1; i < identifierStorage.Count; i++)
         {
-            identifierStorage[i].Should().BeGreaterThan(identifierStorage[i - 1]);
+            identifierStorage[i].ShouldBeGreaterThan(identifierStorage[i - 1]);
         }
     }
 }
